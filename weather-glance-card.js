@@ -11,7 +11,7 @@
  * like any nested card; install that card too. See README.md.
  */
 
-const VERSION = "0.1.0";
+const VERSION = "0.1.1";
 
 const EMPTY = ["unknown", "unavailable", "none", "None", ""];
 
@@ -62,7 +62,7 @@ class WeatherGlanceCard extends HTMLElement {
     this._uvSig = null;
     if (!this.shadowRoot) {
       this.attachShadow({ mode: "open" });
-      this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card><div class="wg"></div><div class="uv"></div></ha-card>`;
+      this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card><div class="wg"></div><div class="dv"></div><div class="uv"></div></ha-card>`;
       this.shadowRoot.querySelector("ha-card").addEventListener("click", (ev) => {
         const path = ev.composedPath();
         // The UV bar opens its own entity.
@@ -178,7 +178,7 @@ class WeatherGlanceCard extends HTMLElement {
       col("mdi:thermometer", `${t === null ? "\u2013" : t.toFixed(0)}\u00b0`, `Feels ${r(fl)}\u00b0`, c.temperature) +
       col("mdi:water-percent", `${r(h)}%`, "Humidity", c.humidity) +
       col("mdi:weather-windy", `${r(w)}<span class="u"> km/h</span>`, esc(`${wb || ""}${wg != null ? " \u00b7 gusts " + Math.round(wg) : ""}`), c.wind) +
-      `</div><div class="dv"></div>`
+      `</div>`
     );
   }
 
@@ -211,14 +211,15 @@ class WeatherGlanceCard extends HTMLElement {
 const STYLE = `
 :host { display: block; height: 100%; }
 ha-card { height: 100%; box-sizing: border-box; padding: 10px 12px; display: flex; flex-direction: column; cursor: pointer; }
-.wg { flex: 1 1 auto; min-height: 0; overflow: hidden; container-type: inline-size; display: flex; flex-direction: column; justify-content: space-evenly; color: var(--primary-text-color); }
+.wg { flex: 1 1 auto; min-height: 0; overflow: hidden; line-height: normal; container-type: inline-size; display: flex; flex-direction: column; justify-content: space-evenly; color: var(--primary-text-color); }
 .wg .g { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.1fr; text-align: center; }
 .wg .c { min-width: 0; }
 .wg ha-icon { --mdc-icon-size: 40px; color: var(--secondary-text-color); margin: 0 auto 2px; display: block; width: 40px; height: 40px; }
 .wg .v { font-size: var(--ha-font-size-2xl, 24px); font-weight: var(--ha-font-weight-medium, 500); margin-top: 2px; white-space: nowrap; }
 .wg .u { font-size: var(--ha-font-size-s, 12px); font-weight: var(--ha-font-weight-normal, 400); color: var(--secondary-text-color); }
 .wg .s { font-size: var(--ha-font-size-s, 12px); color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
-.wg .dv { border-top: 1px solid var(--divider-color, rgba(234, 235, 238, 0.12)); margin: 12px 6px 0; }
+/* The divider sits outside the clipped columns so it always shows. */
+.dv { flex: none; border-top: 1px solid var(--divider-color, rgba(234, 235, 238, 0.12)); margin: 12px 6px 0; }
 @container (max-width: 340px) {
   .wg ha-icon { --mdc-icon-size: 30px; width: 30px; height: 30px; }
   .wg .v { font-size: var(--ha-font-size-l, 16px); }
