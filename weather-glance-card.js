@@ -210,10 +210,14 @@ class WeatherGlanceCard extends HTMLElement {
 
 const STYLE = `
 :host { display: block; height: 100%; }
-/* The theme's glass tint (Frosted Glass sets --ha-card-glass-tint, which the
-   wall panel screensaver deepens), drawn by the card itself so it doesn't depend
-   on the theme's card-mod styles reaching this card. Other themes: their card background. */
-ha-card { height: 100%; box-sizing: border-box; padding: 10px 12px; display: flex; flex-direction: column; cursor: pointer; background: var(--ha-card-glass-tint, var(--ha-card-background, var(--card-background-color))); }
+ha-card { height: 100%; box-sizing: border-box; padding: 10px 12px; display: flex; flex-direction: column; cursor: pointer; }
+/* The theme's glass layer, mirrored from Frosted Glass (transparent card, tint
+   on ::before; the wall panel screensaver deepens --ha-card-glass-tint), so it
+   shows even where the theme's card-mod styles don't reach this card. Same
+   pseudo-element as the theme's, so it never doubles up. Other themes: their
+   normal card background. */
+ha-card { position: relative; isolation: isolate; background: transparent; }
+ha-card::before { content: var(--frosted-glass-card-layer-content, ""); position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; background: var(--ha-card-glass-tint, var(--ha-card-background, var(--card-background-color))); }
 .wg { flex: 1 1 auto; min-height: 0; overflow: hidden; line-height: normal; container-type: inline-size; display: flex; flex-direction: column; justify-content: space-evenly; color: var(--primary-text-color); }
 .wg .g { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.1fr; text-align: center; }
 .wg .c { min-width: 0; }
