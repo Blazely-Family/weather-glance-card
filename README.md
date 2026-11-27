@@ -1,8 +1,9 @@
 # Weather Glance Card
 
 At-a-glance weather for Home Assistant wall panels: forecast outlook with
-high/low, current temperature and feels like, humidity and wind, over a UV bar
-shaded to the day's forecast maximum.
+high/low, current temperature and feels like, optional humidity, wind and extra
+entity columns (pollen levels, air quality, anything), over a UV bar shaded to
+the day's forecast maximum.
 
 The UV row is a nested [bar-lines-card](https://github.com/Blazely-Family/bar-lines-card),
 so bars look the same everywhere. **Install bar-lines-card as well**; without
@@ -32,14 +33,28 @@ forecast:
   text: sensor.home_short_text_{d}
 temperature: sensor.outdoor_temperature
 feels_like: sensor.outdoor_feels_like
-humidity: sensor.outdoor_humidity
-wind: sensor.wind_speed                    # attributes `gust` and `bearing` if present
+humidity: sensor.outdoor_humidity          # optional: leave out to drop the column
+wind: sensor.wind_speed                    # optional; attributes `gust` and `bearing` if present
+extra:                                     # optional: more columns, one per entity
+  - entity: input_text.grass_pollen
+    name: Grass                            # default: the entity's name
+    icon: mdi:grass                        # default: the entity's icon
+    max_age: 24                            # optional: grey the value once unchanged this many hours
+    colors:                                # optional: state -> theme colour name or CSS colour
+      Low: success
+      Moderate: warning
+      High: error
 uv:
   entity: sensor.uv_index                  # UV now
   max: sensor.home_uv_max_index_{d}        # forecast maximum (shading and MAX marker)
   start: sensor.home_uv_start_time_{d}     # protection window, timestamps
   end: sensor.home_uv_end_time_{d}
 ```
+
+Columns share the width, so every column added or dropped resizes the rest.
+An extra column shows the state as Home Assistant formats it. A colour name
+such as `success`, `warning` or `error` uses the theme's `--success-color` and
+so on.
 
 It takes the full width and three grid rows by default. Tapping a column opens
 its entity; tapping the UV bar opens the UV sensor.

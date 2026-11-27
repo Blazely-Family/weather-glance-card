@@ -1,8 +1,9 @@
 /*
  * weather-glance-card: at-a-glance weather for Home Assistant wall panels.
  *
- * Four columns (forecast outlook with high/low, current temperature and feels
- * like, humidity, wind) over a UV bar shaded to the day's forecast maximum.
+ * Columns (forecast outlook with high/low, current temperature and feels like,
+ * then optional humidity, wind and any extra entities) over a UV bar shaded to
+ * the day's forecast maximum.
  * Daily forecast sensors are named with a {d} day index (0 today, 1
  * tomorrow); when today's values are gone for the evening the card shows
  * tomorrow's, marked "Tmrw".
@@ -11,7 +12,7 @@
  * like any nested card; install that card too. See README.md.
  */
 
-const VERSION = "0.1.2";
+const VERSION = "0.2.0";
 
 const EMPTY = ["unknown", "unavailable", "none", "None", ""];
 
@@ -44,6 +45,12 @@ function clock(hass, id) {
   const ap = hh < 12 ? "am" : "pm";
   hh = hh % 12 || 12;
   return hh + (mm ? ":" + String(mm).padStart(2, "0") : "") + ap;
+}
+
+// A colour from config: a theme colour name ("success" -> --success-color) or any CSS colour.
+function cssColor(c) {
+  if (!c) return "";
+  return /^[a-z][a-z-]*$/.test(c) && !CSS.supports("color", c) ? `var(--${c}-color)` : c;
 }
 
 function day(id, d) {
@@ -170,16 +177,36 @@ class WeatherGlanceCard extends HTMLElement {
     const wg = attrOf(hass, c.wind, c.wind_gust_attribute || "gust");
     const wb = attrOf(hass, c.wind, c.wind_bearing_attribute || "bearing");
 
-    const col = (ic, val, sub, entity) =>
-      `<div class="c"${entity ? ` data-entity="${esc(entity)}"` : ""}><ha-icon icon="${esc(ic)}"></ha-icon><div class="v">${val}</div><div class="s">${sub}</div></div>`;
-    return (
-      `<div class="g">` +
-      col(icon, `${r(hi)}\u00b0${lo === null ? "" : `<span class="u"> / ${r(lo)}\u00b0</span>`}`, esc((tmrw ? "Tmrw \u00b7 " : "") + words), c.entity) +
-      col("mdi:thermometer", `${t === null ? "\u2013" : t.toFixed(0)}\u00b0`, `Feels ${r(fl)}\u00b0`, c.temperature) +
-      col("mdi:water-percent", `${r(h)}%`, "Humidity", c.humidity) +
-      col("mdi:weather-windy", `${r(w)}<span class="u"> km/h</span>`, esc(`${wb || ""}${wg != null ? " \u00b7 gusts " + Math.round(wg) : ""}`), c.wind) +
-      `</div>`
-    );
+    const col = (...a) => this._col(...a);
+    const cols = [
+      ["1.25fr", col(icon, `${r(hi)}\u00b0${lo === null ? "" : `<span class="u"> / ${r(lo)}\u00b0</span>`}`, esc((tmrw ? "Tmrw \u00b7 " : "") + words), c.entity)],
+      ["1fr", col("mdi:thermometer", `${t === null ? "\u2013" : t.toFixed(0)}\u00b0`, `Feels ${r(fl)}\u00b0`, c.temperature)],
+    ];
+    if (c.humidity) cols.push(["1fr", col("mdi:water-percent", `${r(h)}%`, "Humidity", c.humidity)]);
+    if (c.wind) cols.push(["1.1fr", col("mdi:weather-windy", `${r(w)}<span class="u"> km/h</span>`, esc(`${wb || ""}${wg != null ? " \u00b7 gusts " + Math.round(wg) : ""}`), c.wind)]);
+    for (const x of [].concat(c.extra || [])) cols.push(["1fr", this._extra(hass, x)]);
+    return `<div class="g" style="grid-template-columns: ${cols.map((x) => x[0]).join(" ")}">` + cols.map((x) => x[1]).join("") + `</div>`;
+  }
+
+  _col(ic, val, sub, entity, cls = "", style = "") {
+    return `<div class="c${cls}"${entity ? ` data-entity="${esc(entity)}"` : ""}${style ? ` style="${esc(style)}"` : ""}><ha-icon icon="${esc(ic)}"></ha-icon><div class="v">${val}</div><div class="s">${sub}</div></div>`;
+  }
+
+  // An extra column: any entity's state as HA formats it, with its name below.
+  // `colors` maps a state to a theme colour; `max_age` (hours) greys out a
+  // value that hasn't changed for that long.
+  _extra(hass, x) {
+    const e = typeof x === "string" ? { entity: x } : x || {};
+    const st = e.entity && hass.states[e.entity];
+    const ok = st && !EMPTY.includes(String(st.state));
+    const val = ok ? (hass.formatEntityState ? hass.formatEntityState(st) : st.state) : "\u2013";
+    const name = e.name || (st && st.attributes.friendly_name) || e.entity || "";
+    const icon = e.icon || (st && st.attributes.icon) || "mdi:information-outline";
+    const age = st ? (Date.now() - Date.parse(st.last_changed)) / 3600000 : 0;
+    const stale = ok && e.max_age != null && age > Number(e.max_age);
+    const colors = e.colors || {};
+    const color = ok && !stale ? cssColor(colors[st.state]) : "";
+    return this._col(icon, esc(val), esc(name), e.entity, stale ? " stale" : "", color ? `--wg-value-color: ${color}` : "");
   }
 
   // UV now, shaded to the forecast max, with the forecast's UV window.
@@ -220,6 +247,8 @@ ha-card { position: relative; isolation: isolate; background: transparent; }
 ha-card::before { content: var(--frosted-glass-card-layer-content, ""); position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; background: var(--ha-card-glass-tint, var(--ha-card-background, var(--card-background-color))); }
 .wg { flex: 1 1 auto; min-height: 0; overflow: hidden; line-height: normal; container-type: inline-size; display: flex; flex-direction: column; justify-content: space-evenly; color: var(--primary-text-color); }
 .wg .g { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.1fr; text-align: center; }
+.wg .c .v { color: var(--wg-value-color, inherit); }
+.wg .c.stale .v, .wg .c.stale ha-icon { color: var(--disabled-text-color, var(--secondary-text-color)); }
 .wg .c { min-width: 0; }
 .wg ha-icon { --mdc-icon-size: 40px; color: var(--secondary-text-color); margin: 0 auto 2px; display: block; width: 40px; height: 40px; }
 .wg .v { font-size: var(--ha-font-size-2xl, 24px); font-weight: var(--ha-font-weight-medium, 500); margin-top: 2px; white-space: nowrap; }
@@ -242,7 +271,7 @@ if (!customElements.get("weather-glance-card")) {
   window.customCards.push({
     type: "weather-glance-card",
     name: "Weather glance",
-    description: "Outlook, temperature, humidity, wind and a UV bar at a glance.",
+    description: "Outlook, temperature, optional humidity, wind and extra entities, and a UV bar at a glance.",
   });
   console.info(`%c WEATHER-GLANCE-CARD %c ${VERSION} `, "background:#3a7ca5;color:#fff", "");
 }
