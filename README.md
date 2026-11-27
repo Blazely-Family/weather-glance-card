@@ -40,10 +40,11 @@ extra:                                     # optional: more columns, one per ent
     name: Grass                            # default: the entity's name
     icon: mdi:grass                        # default: the entity's icon
     max_age: 24                            # optional: grey the value once unchanged this many hours
-    colors:                                # optional: state -> theme colour name or CSS colour
-      Low: success
-      Moderate: warning
-      High: error
+    colors:                                # optional: state -> HA colour name or CSS colour
+      Low: green
+      Moderate: amber
+      High: deep-orange
+      Extreme: red
 uv:
   entity: sensor.uv_index                  # UV now
   max: sensor.home_uv_max_index_{d}        # forecast maximum (shading and MAX marker)
@@ -53,8 +54,9 @@ uv:
 
 Columns share the width, so every column added or dropped resizes the rest.
 An extra column shows the state as Home Assistant formats it. A colour name
-such as `success`, `warning` or `error` uses the theme's `--success-color` and
-so on.
+uses Home Assistant's own colour variable, the same names tile cards take
+(`green`, `amber`, `deep-orange`, `success`, `error`, ...): `green` becomes
+`var(--green-color)`, so the theme decides the exact shade.
 
 It takes the full width and three grid rows by default. Tapping a column opens
 its entity; tapping the UV bar opens the UV sensor.

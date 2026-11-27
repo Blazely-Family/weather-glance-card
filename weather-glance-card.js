@@ -47,10 +47,11 @@ function clock(hass, id) {
   return hh + (mm ? ":" + String(mm).padStart(2, "0") : "") + ap;
 }
 
-// A colour from config: a theme colour name ("success" -> --success-color) or any CSS colour.
+// A colour from config: a Home Assistant colour name ("success", "green",
+// "deep-orange" -> var(--<name>-color), as tile cards take them) or any CSS colour.
 function cssColor(c) {
   if (!c) return "";
-  return /^[a-z][a-z-]*$/.test(c) && !CSS.supports("color", c) ? `var(--${c}-color)` : c;
+  return /^[a-z][a-z-]*$/.test(c) ? `var(--${c}-color)` : c;
 }
 
 function day(id, d) {
