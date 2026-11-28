@@ -12,7 +12,7 @@
  * like any nested card; install that card too. See README.md.
  */
 
-const VERSION = "0.2.0";
+const VERSION = "0.2.1";
 
 const EMPTY = ["unknown", "unavailable", "none", "None", ""];
 
@@ -75,7 +75,15 @@ class WeatherGlanceCard extends HTMLElement {
         const path = ev.composedPath();
         // The UV bar opens its own entity.
         if (path.some((n) => n.localName === "bar-lines-card")) return;
-        const col = path.find((n) => n.dataset && n.dataset.entity);
+        const col = path.find((n) => n.dataset && (n.dataset.entity || n.dataset.extra));
+        // An extra column can carry its own HA tap action (none, or fire-dom-event for a pop-up).
+        const x = col && col.dataset.extra !== undefined ? [].concat(this._cfg.extra || [])[Number(col.dataset.extra)] : null;
+        const act = x && typeof x === "object" ? x.tap_action : null;
+        if (act && act.action === "none") return;
+        if (act && act.action === "fire-dom-event") {
+          this.dispatchEvent(new CustomEvent("ll-custom", { detail: act, bubbles: true, composed: true }));
+          return;
+        }
         moreInfo(this, col ? col.dataset.entity : this._cfg.entity);
       });
     }
@@ -185,7 +193,8 @@ class WeatherGlanceCard extends HTMLElement {
     ];
     if (c.humidity) cols.push(["1fr", col("mdi:water-percent", `${r(h)}%`, "Humidity", c.humidity)]);
     if (c.wind) cols.push(["1.1fr", col("mdi:weather-windy", `${r(w)}<span class="u"> km/h</span>`, esc(`${wb || ""}${wg != null ? " \u00b7 gusts " + Math.round(wg) : ""}`), c.wind)]);
-    for (const x of [].concat(c.extra || [])) cols.push(["1fr", this._extra(hass, x)]);
+    // Extra columns size to their words first; the rest share what is left.
+    [].concat(c.extra || []).forEach((x, i) => cols.push(["minmax(min-content, 1fr)", this._extra(hass, x, i)]));
     return `<div class="g" style="grid-template-columns: ${cols.map((x) => x[0]).join(" ")}">` + cols.map((x) => x[1]).join("") + `</div>`;
   }
 
@@ -194,20 +203,24 @@ class WeatherGlanceCard extends HTMLElement {
   }
 
   // An extra column: any entity's state as HA formats it, with its name below.
-  // `colors` maps a state to a theme colour; `max_age` (hours) greys out a
-  // value that hasn't changed for that long.
-  _extra(hass, x) {
+  // `colors` maps a state to a colour for the icon; `max_age` (hours) greys out a
+  // value that hasn't changed for that long (`updated_attribute` names an
+// attribute holding the reading's own time, which survives restarts).
+  _extra(hass, x, i) {
     const e = typeof x === "string" ? { entity: x } : x || {};
     const st = e.entity && hass.states[e.entity];
     const ok = st && !EMPTY.includes(String(st.state));
     const val = ok ? (hass.formatEntityState ? hass.formatEntityState(st) : st.state) : "\u2013";
     const name = e.name || (st && st.attributes.friendly_name) || e.entity || "";
     const icon = e.icon || (st && st.attributes.icon) || "mdi:information-outline";
-    const age = st ? (Date.now() - Date.parse(st.last_changed)) / 3600000 : 0;
+    // Age from an attribute the source keeps (e.g. `updated`), else from when HA last saw it change.
+    const since = st && e.updated_attribute ? st.attributes[e.updated_attribute] : st && st.last_changed;
+    const age = since && !Number.isNaN(Date.parse(since)) ? (Date.now() - Date.parse(since)) / 3600000 : 0;
     const stale = ok && e.max_age != null && age > Number(e.max_age);
     const colors = e.colors || {};
     const color = ok && !stale ? cssColor(colors[st.state]) : "";
-    return this._col(icon, esc(val), esc(name), e.entity, stale ? " stale" : "", color ? `--wg-value-color: ${color}` : "");
+    return this._col(icon, esc(val), esc(name), e.entity, " x" + (stale ? " stale" : ""), color ? `--wg-icon-color: ${color}` : "")
+      .replace('<div class="c', `<div data-extra="${i}" data-popup-anchor="wg-extra-${i}" class="c`);
   }
 
   // UV now, shaded to the forecast max, with the forecast's UV window.
@@ -248,7 +261,10 @@ ha-card { position: relative; isolation: isolate; background: transparent; }
 ha-card::before { content: var(--frosted-glass-card-layer-content, ""); position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; background: var(--ha-card-glass-tint, var(--ha-card-background, var(--card-background-color))); }
 .wg { flex: 1 1 auto; min-height: 0; overflow: hidden; line-height: normal; container-type: inline-size; display: flex; flex-direction: column; justify-content: space-evenly; color: var(--primary-text-color); }
 .wg .g { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.1fr; text-align: center; }
-.wg .c .v { color: var(--wg-value-color, inherit); }
+/* An extra column's state colour goes on its icon; the value stays plain. */
+.wg .c.x ha-icon { color: var(--wg-icon-color, var(--secondary-text-color)); }
+/* Extra columns hold words, at the theme's medium size, on the same line height as the numbers so the rows stay aligned. */
+.wg .c.x .v { font-size: var(--ha-font-size-m, 14px); line-height: calc(var(--ha-font-size-2xl, 24px) * 1.17); }
 .wg .c.stale .v, .wg .c.stale ha-icon { color: var(--disabled-text-color, var(--secondary-text-color)); }
 .wg .c { min-width: 0; }
 .wg ha-icon { --mdc-icon-size: 40px; color: var(--secondary-text-color); margin: 0 auto 2px; display: block; width: 40px; height: 40px; }
