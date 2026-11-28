@@ -264,11 +264,11 @@ ha-card::before { content: var(--frosted-glass-card-layer-content, ""); position
 /* An extra column's state colour goes on its icon; the value stays plain. */
 .wg .c.x ha-icon { color: var(--wg-icon-color, var(--secondary-text-color)); }
 /* Extra columns hold words, at the theme's medium size, on the same line height as the numbers so the rows stay aligned. */
-.wg .c.x .v { font-size: var(--ha-font-size-m, 14px); height: calc(var(--ha-font-size-2xl, 24px) * 1.17); box-sizing: border-box; padding-bottom: 2px; display: flex; align-items: flex-end; justify-content: center; }
+.wg .c.x .v { font-size: var(--ha-font-size-m, 14px); height: calc(var(--ha-font-size-2xl, 24px) * 1.2); box-sizing: border-box; padding-bottom: 2px; display: flex; align-items: flex-end; justify-content: center; }
 .wg .c.stale .v, .wg .c.stale ha-icon { color: var(--disabled-text-color, var(--secondary-text-color)); }
 .wg .c { min-width: 0; }
 .wg ha-icon { --mdc-icon-size: 40px; color: var(--secondary-text-color); margin: 0 auto 2px; display: block; width: 40px; height: 40px; }
-.wg .v { font-size: var(--ha-font-size-2xl, 24px); font-weight: var(--ha-font-weight-medium, 500); margin-top: 2px; white-space: nowrap; }
+.wg .v { font-size: var(--ha-font-size-2xl, 24px); line-height: 1.2; font-weight: var(--ha-font-weight-medium, 500); margin-top: 2px; white-space: nowrap; }
 .wg .u { font-size: var(--ha-font-size-s, 12px); font-weight: var(--ha-font-weight-normal, 400); color: var(--secondary-text-color); }
 .wg .s { font-size: var(--ha-font-size-s, 12px); color: var(--secondary-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
 /* The divider sits outside the clipped columns so it always shows. */
@@ -276,7 +276,7 @@ ha-card::before { content: var(--frosted-glass-card-layer-content, ""); position
 @container (max-width: 340px) {
   .wg ha-icon { --mdc-icon-size: 30px; width: 30px; height: 30px; }
   .wg .v { font-size: var(--ha-font-size-l, 16px); }
-  .wg .c.x .v { height: calc(var(--ha-font-size-l, 16px) * 1.17); }
+  .wg .c.x .v { height: calc(var(--ha-font-size-l, 16px) * 1.2); }
 }
 .uv { flex: none; min-width: 0; margin: 8px 6px 7px; }
 .uv[hidden] { display: none; }
