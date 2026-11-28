@@ -260,6 +260,8 @@ ha-card::before { content: var(--frosted-glass-card-layer-content, ""); position
 .wg .g { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.1fr; text-align: center; }
 /* An extra column's state colour goes on its icon; the value stays plain. */
 .wg .c.x ha-icon { color: var(--wg-icon-color, var(--secondary-text-color)); }
+/* Extra columns hold words, at the theme's medium size, on the same line height as the numbers so the rows stay aligned. */
+.wg .c.x .v { font-size: var(--ha-font-size-m, 14px); line-height: calc(var(--ha-font-size-2xl, 24px) * 1.17); }
 .wg .c.stale .v, .wg .c.stale ha-icon { color: var(--disabled-text-color, var(--secondary-text-color)); }
 .wg .c { min-width: 0; }
 .wg ha-icon { --mdc-icon-size: 40px; color: var(--secondary-text-color); margin: 0 auto 2px; display: block; width: 40px; height: 40px; }
