@@ -61,7 +61,8 @@ uv:
 
 Every column is optional. Leave out `forecast` or `temperature` to drop those
 columns, and `uv` to drop the bar and its divider, e.g. for a row of pollen or
-air-quality columns on its own.
+air-quality columns on its own. `per_row: 3` wraps the columns onto rows of
+three equal columns, for more columns than fit across.
 
 Columns share the width, so every column added or dropped resizes the rest.
 An extra column shows the state as Home Assistant formats it. A colour name

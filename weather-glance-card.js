@@ -224,7 +224,10 @@ class WeatherGlanceCard extends HTMLElement {
     if (c.wind) cols.push(["1.1fr", col("mdi:weather-windy", `${r(w)}<span class="u"> km/h</span>`, esc(`${wb || ""}${wg != null ? " \u00b7 gusts " + Math.round(wg) : ""}`), c.wind)]);
     // Extra columns size to their words first; the rest share what is left.
     [].concat(c.extra || []).forEach((x, i) => cols.push(["minmax(min-content, 1fr)", this._extra(hass, x, i)]));
-    return `<div class="g" style="grid-template-columns: ${cols.map((x) => x[0]).join(" ")}">` + cols.map((x) => x[1]).join("") + `</div>`;
+    // `per_row` wraps the columns onto rows of that many equal columns.
+    const n = Number(c.per_row) > 0 ? Math.floor(Number(c.per_row)) : 0;
+    const tpl = n ? `repeat(${n}, minmax(0, 1fr))` : cols.map((x) => x[0]).join(" ");
+    return `<div class="g${n ? " wrap" : ""}" style="grid-template-columns: ${tpl}">` + cols.map((x) => x[1]).join("") + `</div>`;
   }
 
   _col(ic, val, sub, entity, cls = "", style = "") {
@@ -296,6 +299,7 @@ ha-card::before { content: var(--frosted-glass-card-layer-content, ""); position
 .wg .c.x .v { font-size: var(--ha-font-size-m, 14px); height: calc(var(--ha-font-size-2xl, 24px) * 1.2); box-sizing: border-box; padding-bottom: 3px; display: flex; align-items: flex-end; justify-content: center; }
 .wg .c.stale .v, .wg .c.stale ha-icon { color: var(--disabled-text-color, var(--secondary-text-color)); }
 .wg .c { min-width: 0; }
+.wg .g.wrap { row-gap: 14px; }
 .wg ha-icon { --mdc-icon-size: 40px; color: var(--secondary-text-color); margin: 0 auto 2px; display: block; width: 40px; height: 40px; }
 .wg .v { font-size: var(--ha-font-size-2xl, 24px); line-height: 1.2; font-weight: var(--ha-font-weight-medium, 500); margin-top: 2px; white-space: nowrap; }
 .wg .u { font-size: var(--ha-font-size-s, 12px); font-weight: var(--ha-font-weight-normal, 400); color: var(--secondary-text-color); }
