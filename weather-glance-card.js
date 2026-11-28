@@ -75,7 +75,15 @@ class WeatherGlanceCard extends HTMLElement {
         const path = ev.composedPath();
         // The UV bar opens its own entity.
         if (path.some((n) => n.localName === "bar-lines-card")) return;
-        const col = path.find((n) => n.dataset && n.dataset.entity);
+        const col = path.find((n) => n.dataset && (n.dataset.entity || n.dataset.extra));
+        // An extra column can carry its own HA tap action (none, or fire-dom-event for a pop-up).
+        const x = col && col.dataset.extra !== undefined ? [].concat(this._cfg.extra || [])[Number(col.dataset.extra)] : null;
+        const act = x && typeof x === "object" ? x.tap_action : null;
+        if (act && act.action === "none") return;
+        if (act && act.action === "fire-dom-event") {
+          this.dispatchEvent(new CustomEvent("ll-custom", { detail: act, bubbles: true, composed: true }));
+          return;
+        }
         moreInfo(this, col ? col.dataset.entity : this._cfg.entity);
       });
     }
@@ -186,7 +194,7 @@ class WeatherGlanceCard extends HTMLElement {
     if (c.humidity) cols.push(["1fr", col("mdi:water-percent", `${r(h)}%`, "Humidity", c.humidity)]);
     if (c.wind) cols.push(["1.1fr", col("mdi:weather-windy", `${r(w)}<span class="u"> km/h</span>`, esc(`${wb || ""}${wg != null ? " \u00b7 gusts " + Math.round(wg) : ""}`), c.wind)]);
     // Extra columns size to their words first; the rest share what is left.
-    for (const x of [].concat(c.extra || [])) cols.push(["minmax(min-content, 1fr)", this._extra(hass, x)]);
+    [].concat(c.extra || []).forEach((x, i) => cols.push(["minmax(min-content, 1fr)", this._extra(hass, x, i)]));
     return `<div class="g" style="grid-template-columns: ${cols.map((x) => x[0]).join(" ")}">` + cols.map((x) => x[1]).join("") + `</div>`;
   }
 
@@ -197,7 +205,7 @@ class WeatherGlanceCard extends HTMLElement {
   // An extra column: any entity's state as HA formats it, with its name below.
   // `colors` maps a state to a colour for the icon; `max_age` (hours) greys out a
   // value that hasn't changed for that long.
-  _extra(hass, x) {
+  _extra(hass, x, i) {
     const e = typeof x === "string" ? { entity: x } : x || {};
     const st = e.entity && hass.states[e.entity];
     const ok = st && !EMPTY.includes(String(st.state));
@@ -208,7 +216,8 @@ class WeatherGlanceCard extends HTMLElement {
     const stale = ok && e.max_age != null && age > Number(e.max_age);
     const colors = e.colors || {};
     const color = ok && !stale ? cssColor(colors[st.state]) : "";
-    return this._col(icon, esc(val), esc(name), e.entity, " x" + (stale ? " stale" : ""), color ? `--wg-icon-color: ${color}` : "");
+    return this._col(icon, esc(val), esc(name), e.entity, " x" + (stale ? " stale" : ""), color ? `--wg-icon-color: ${color}` : "")
+      .replace('<div class="c', `<div data-extra="${i}" data-popup-anchor="wg-extra-${i}" class="c`);
   }
 
   // UV now, shaded to the forecast max, with the forecast's UV window.

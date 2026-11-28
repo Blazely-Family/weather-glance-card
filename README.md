@@ -45,6 +45,9 @@ extra:                                     # optional: more columns, one per ent
       Moderate: amber
       High: deep-orange
       Extreme: red
+    tap_action:                            # optional: HA tap action; default opens the entity
+      action: fire-dom-event               # e.g. open a list-popup summary, anchored to this column
+      list_popup: { entity: sensor.example_list }
 uv:
   entity: sensor.uv_index                  # UV now
   max: sensor.home_uv_max_index_{d}        # forecast maximum (shading and MAX marker)
