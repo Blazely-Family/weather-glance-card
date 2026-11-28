@@ -204,7 +204,8 @@ class WeatherGlanceCard extends HTMLElement {
 
   // An extra column: any entity's state as HA formats it, with its name below.
   // `colors` maps a state to a colour for the icon; `max_age` (hours) greys out a
-  // value that hasn't changed for that long.
+  // value that hasn't changed for that long (`updated_attribute` names an
+// attribute holding the reading's own time, which survives restarts).
   _extra(hass, x, i) {
     const e = typeof x === "string" ? { entity: x } : x || {};
     const st = e.entity && hass.states[e.entity];
@@ -212,7 +213,9 @@ class WeatherGlanceCard extends HTMLElement {
     const val = ok ? (hass.formatEntityState ? hass.formatEntityState(st) : st.state) : "\u2013";
     const name = e.name || (st && st.attributes.friendly_name) || e.entity || "";
     const icon = e.icon || (st && st.attributes.icon) || "mdi:information-outline";
-    const age = st ? (Date.now() - Date.parse(st.last_changed)) / 3600000 : 0;
+    // Age from an attribute the source keeps (e.g. `updated`), else from when HA last saw it change.
+    const since = st && e.updated_attribute ? st.attributes[e.updated_attribute] : st && st.last_changed;
+    const age = since && !Number.isNaN(Date.parse(since)) ? (Date.now() - Date.parse(since)) / 3600000 : 0;
     const stale = ok && e.max_age != null && age > Number(e.max_age);
     const colors = e.colors || {};
     const color = ok && !stale ? cssColor(colors[st.state]) : "";

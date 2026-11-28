@@ -40,6 +40,7 @@ extra:                                     # optional: more columns, one per ent
     name: Grass                            # default: the entity's name
     icon: mdi:grass                        # default: the entity's icon
     max_age: 24                            # optional: grey the value once unchanged this many hours
+    updated_attribute: updated             # optional: attribute with the reading's time (default: last changed)
     colors:                                # optional: icon colour per state, HA colour name or CSS colour
       Low: green
       Moderate: amber
