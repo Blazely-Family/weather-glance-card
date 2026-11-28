@@ -12,7 +12,7 @@
  * like any nested card; install that card too. See README.md.
  */
 
-const VERSION = "0.2.0";
+const VERSION = "0.2.1";
 
 const EMPTY = ["unknown", "unavailable", "none", "None", ""];
 
@@ -207,7 +207,7 @@ class WeatherGlanceCard extends HTMLElement {
     const stale = ok && e.max_age != null && age > Number(e.max_age);
     const colors = e.colors || {};
     const color = ok && !stale ? cssColor(colors[st.state]) : "";
-    return this._col(icon, esc(val), esc(name), e.entity, stale ? " stale" : "", color ? `--wg-value-color: ${color}` : "");
+    return this._col(icon, esc(val), esc(name), e.entity, " x" + (stale ? " stale" : ""), color ? `--wg-value-color: ${color}` : "");
   }
 
   // UV now, shaded to the forecast max, with the forecast's UV window.
@@ -249,6 +249,8 @@ ha-card::before { content: var(--frosted-glass-card-layer-content, ""); position
 .wg { flex: 1 1 auto; min-height: 0; overflow: hidden; line-height: normal; container-type: inline-size; display: flex; flex-direction: column; justify-content: space-evenly; color: var(--primary-text-color); }
 .wg .g { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.1fr; text-align: center; }
 .wg .c .v { color: var(--wg-value-color, inherit); }
+/* Extra columns hold words ("Moderate"), so a step smaller and never spilling into the next column. */
+.wg .c.x .v { font-size: var(--ha-font-size-xl, 20px); line-height: var(--ha-line-height-condensed, 1.2); padding-top: 4px; overflow: hidden; text-overflow: ellipsis; }
 .wg .c.stale .v, .wg .c.stale ha-icon { color: var(--disabled-text-color, var(--secondary-text-color)); }
 .wg .c { min-width: 0; }
 .wg ha-icon { --mdc-icon-size: 40px; color: var(--secondary-text-color); margin: 0 auto 2px; display: block; width: 40px; height: 40px; }
