@@ -12,7 +12,7 @@
  * like any nested card; install that card too. See README.md.
  */
 
-const VERSION = "0.2.1";
+const VERSION = "0.2.2";
 
 const EMPTY = ["unknown", "unavailable", "none", "None", ""];
 
@@ -54,6 +54,24 @@ function cssColor(c) {
   return /^[a-z][a-z-]*$/.test(c) ? `var(--${c}-color)` : c;
 }
 
+// The Home Assistant tap actions a wall panel needs.
+function runAction(el, act, entityId) {
+  switch (act.action) {
+    case "none":
+      return;
+    case "navigate":
+      if (!act.navigation_path) return;
+      history.pushState(null, "", act.navigation_path);
+      window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false }, bubbles: true, composed: true }));
+      return;
+    case "fire-dom-event":
+      el.dispatchEvent(new CustomEvent("ll-custom", { detail: act, bubbles: true, composed: true }));
+      return;
+    default:
+      moreInfo(el, act.entity || entityId);
+  }
+}
+
 function day(id, d) {
   return id ? String(id).replace(/\{d\}/g, d) : id;
 }
@@ -71,21 +89,27 @@ class WeatherGlanceCard extends HTMLElement {
     if (!this.shadowRoot) {
       this.attachShadow({ mode: "open" });
       this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card><div class="wg"></div><div class="dv"></div><div class="uv"></div></ha-card>`;
-      this.shadowRoot.querySelector("ha-card").addEventListener("click", (ev) => {
-        const path = ev.composedPath();
-        // The UV bar opens its own entity.
-        if (path.some((n) => n.localName === "bar-lines-card")) return;
-        const col = path.find((n) => n.dataset && (n.dataset.entity || n.dataset.extra));
-        // An extra column can carry its own HA tap action (none, or fire-dom-event for a pop-up).
-        const x = col && col.dataset.extra !== undefined ? [].concat(this._cfg.extra || [])[Number(col.dataset.extra)] : null;
-        const act = x && typeof x === "object" ? x.tap_action : null;
-        if (act && act.action === "none") return;
-        if (act && act.action === "fire-dom-event") {
-          this.dispatchEvent(new CustomEvent("ll-custom", { detail: act, bubbles: true, composed: true }));
-          return;
-        }
-        moreInfo(this, col ? col.dataset.entity : this._cfg.entity);
-      });
+      // Capture phase, so a card-wide tap can also take the UV bar's tap.
+      this.shadowRoot.querySelector("ha-card").addEventListener(
+        "click",
+        (ev) => {
+          const path = ev.composedPath();
+          const col = path.find((n) => n.dataset && (n.dataset.entity || n.dataset.extra));
+          // An extra column's own tap action wins, then the card's.
+          const x = col && col.dataset.extra !== undefined ? [].concat(this._cfg.extra || [])[Number(col.dataset.extra)] : null;
+          const act = (x && typeof x === "object" && x.tap_action) || this._cfg.tap_action;
+          const onUv = path.some((n) => n.localName === "bar-lines-card");
+          if (act) {
+            ev.stopPropagation();
+            runAction(this, act, col ? col.dataset.entity : this._cfg.entity);
+            return;
+          }
+          // Without a tap action the UV bar opens its own entity.
+          if (onUv) return;
+          moreInfo(this, col ? col.dataset.entity : this._cfg.entity);
+        },
+        true
+      );
     }
     if (this._hass) this._render(true);
   }

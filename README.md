@@ -25,6 +25,9 @@ UV maximum and window do the same, marked "TMRW".
 ```yaml
 type: custom:weather-glance-card
 entity: weather.home                       # opened when the outlook is tapped
+tap_action:                                # optional: one HA tap action for the whole card, UV bar included
+  action: navigate                         # none, navigate, more-info or fire-dom-event
+  navigation_path: /dashboard/weather
 forecast:
   icon: sensor.home_mdi_icon_{d}
   high: sensor.home_temp_max_{d}
@@ -46,7 +49,7 @@ extra:                                     # optional: more columns, one per ent
       Moderate: amber
       High: deep-orange
       Extreme: red
-    tap_action:                            # optional: HA tap action; default opens the entity
+    tap_action:                            # optional: this column's own tap action; default is the card's
       action: fire-dom-event               # e.g. open a list-popup summary, anchored to this column
       list_popup: { entity: sensor.example_list }
 uv:
@@ -62,5 +65,6 @@ uses Home Assistant's own colour variable, the same names tile cards take
 (`green`, `amber`, `deep-orange`, `success`, `error`, ...): `green` becomes
 `var(--green-color)`, so the theme decides the exact shade.
 
-It takes the full width and three grid rows by default. Tapping a column opens
-its entity; tapping the UV bar opens the UV sensor.
+It takes the full width and three grid rows by default. Without a `tap_action`,
+tapping a column opens its entity and tapping the UV bar opens the UV sensor.
+With one, a tap anywhere on the card runs it, unless an extra column has its own.
