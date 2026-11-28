@@ -12,7 +12,7 @@
  * like any nested card; install that card too. See README.md.
  */
 
-const VERSION = "0.2.2";
+const VERSION = "0.3.0";
 
 const EMPTY = ["unknown", "unavailable", "none", "None", ""];
 
@@ -160,11 +160,15 @@ class WeatherGlanceCard extends HTMLElement {
   _renderUv(hass, force) {
     const box = this.shadowRoot.querySelector(".uv");
     const uv = this._cfg.uv;
+    // No UV bar, no divider above it.
+    const dv = this.shadowRoot.querySelector(".dv");
     if (!uv || !uv.entity) {
       box.hidden = true;
+      dv.hidden = true;
       return;
     }
     box.hidden = false;
+    dv.hidden = false;
     const conf = { card: false, bars: [this._uvBar(hass, uv)] };
     const sig = JSON.stringify(conf);
     let el = box.firstElementChild;
@@ -211,10 +215,11 @@ class WeatherGlanceCard extends HTMLElement {
     const wb = attrOf(hass, c.wind, c.wind_bearing_attribute || "bearing");
 
     const col = (...a) => this._col(...a);
-    const cols = [
-      ["1.25fr", col(icon, `${r(hi)}\u00b0${lo === null ? "" : `<span class="u"> / ${r(lo)}\u00b0</span>`}`, esc((tmrw ? "Tmrw \u00b7 " : "") + words), c.entity)],
-      ["1fr", col("mdi:thermometer", `${t === null ? "\u2013" : t.toFixed(0)}\u00b0`, `Feels ${r(fl)}\u00b0`, c.temperature)],
-    ];
+    // Every column is optional: leave out `forecast` or `temperature` to drop
+    // it, e.g. for a card of extra columns only.
+    const cols = [];
+    if (c.forecast) cols.push(["1.25fr", col(icon, `${r(hi)}\u00b0${lo === null ? "" : `<span class="u"> / ${r(lo)}\u00b0</span>`}`, esc((tmrw ? "Tmrw \u00b7 " : "") + words), c.entity)]);
+    if (c.temperature) cols.push(["1fr", col("mdi:thermometer", `${t === null ? "\u2013" : t.toFixed(0)}\u00b0`, `Feels ${r(fl)}\u00b0`, c.temperature)]);
     if (c.humidity) cols.push(["1fr", col("mdi:water-percent", `${r(h)}%`, "Humidity", c.humidity)]);
     if (c.wind) cols.push(["1.1fr", col("mdi:weather-windy", `${r(w)}<span class="u"> km/h</span>`, esc(`${wb || ""}${wg != null ? " \u00b7 gusts " + Math.round(wg) : ""}`), c.wind)]);
     // Extra columns size to their words first; the rest share what is left.
@@ -303,7 +308,7 @@ ha-card::before { content: var(--frosted-glass-card-layer-content, ""); position
   .wg .c.x .v { height: calc(var(--ha-font-size-l, 16px) * 1.2); }
 }
 .uv { flex: none; min-width: 0; margin: 8px 6px 7px; }
-.uv[hidden] { display: none; }
+.uv[hidden], .dv[hidden] { display: none; }
 .missing { font-size: var(--ha-font-size-s, 12px); color: var(--secondary-text-color); }
 `;
 
