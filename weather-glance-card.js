@@ -195,7 +195,7 @@ class WeatherGlanceCard extends HTMLElement {
   }
 
   // An extra column: any entity's state as HA formats it, with its name below.
-  // `colors` maps a state to a theme colour; `max_age` (hours) greys out a
+  // `colors` maps a state to a colour for the icon; `max_age` (hours) greys out a
   // value that hasn't changed for that long.
   _extra(hass, x) {
     const e = typeof x === "string" ? { entity: x } : x || {};
@@ -208,7 +208,7 @@ class WeatherGlanceCard extends HTMLElement {
     const stale = ok && e.max_age != null && age > Number(e.max_age);
     const colors = e.colors || {};
     const color = ok && !stale ? cssColor(colors[st.state]) : "";
-    return this._col(icon, esc(val), esc(name), e.entity, " x" + (stale ? " stale" : ""), color ? `--wg-value-color: ${color}` : "");
+    return this._col(icon, esc(val), esc(name), e.entity, " x" + (stale ? " stale" : ""), color ? `--wg-icon-color: ${color}` : "");
   }
 
   // UV now, shaded to the forecast max, with the forecast's UV window.
@@ -249,9 +249,8 @@ ha-card { position: relative; isolation: isolate; background: transparent; }
 ha-card::before { content: var(--frosted-glass-card-layer-content, ""); position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit; background: var(--ha-card-glass-tint, var(--ha-card-background, var(--card-background-color))); }
 .wg { flex: 1 1 auto; min-height: 0; overflow: hidden; line-height: normal; container-type: inline-size; display: flex; flex-direction: column; justify-content: space-evenly; color: var(--primary-text-color); }
 .wg .g { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1.1fr; text-align: center; }
-.wg .c .v { color: var(--wg-value-color, inherit); }
-/* Extra columns hold words ("Moderate"), so a step smaller and never spilling into the next column. */
-.wg .c.x .v { font-size: var(--ha-font-size-xl, 20px); line-height: var(--ha-line-height-condensed, 1.2); padding-top: 4px; overflow: hidden; text-overflow: ellipsis; }
+/* An extra column's state colour goes on its icon; the value stays plain. */
+.wg .c.x ha-icon { color: var(--wg-icon-color, var(--secondary-text-color)); }
 .wg .c.stale .v, .wg .c.stale ha-icon { color: var(--disabled-text-color, var(--secondary-text-color)); }
 .wg .c { min-width: 0; }
 .wg ha-icon { --mdc-icon-size: 40px; color: var(--secondary-text-color); margin: 0 auto 2px; display: block; width: 40px; height: 40px; }
