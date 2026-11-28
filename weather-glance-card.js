@@ -185,7 +185,8 @@ class WeatherGlanceCard extends HTMLElement {
     ];
     if (c.humidity) cols.push(["1fr", col("mdi:water-percent", `${r(h)}%`, "Humidity", c.humidity)]);
     if (c.wind) cols.push(["1.1fr", col("mdi:weather-windy", `${r(w)}<span class="u"> km/h</span>`, esc(`${wb || ""}${wg != null ? " \u00b7 gusts " + Math.round(wg) : ""}`), c.wind)]);
-    for (const x of [].concat(c.extra || [])) cols.push(["1fr", this._extra(hass, x)]);
+    // Extra columns size to their words first; the rest share what is left.
+    for (const x of [].concat(c.extra || [])) cols.push(["minmax(min-content, 1fr)", this._extra(hass, x)]);
     return `<div class="g" style="grid-template-columns: ${cols.map((x) => x[0]).join(" ")}">` + cols.map((x) => x[1]).join("") + `</div>`;
   }
 
